@@ -1,0 +1,22 @@
+2
+i t 6
+go 2 4
+go 7 2
+go 1 2
+w
+f
+sft
+rotate r
+i r 6
+go 5 6
+f
+i t 2
+f
+i l 6
+f
+i l 6
+f
+i l 6
+go 5 5
+go 6 6
+exit

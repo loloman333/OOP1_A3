@@ -1,0 +1,25 @@
+2
+sft
+rotate r
+sft
+i r 6
+go 2 1
+go 1 1
+go 1 2
+go 1 4
+go 6 6
+st
+go 5 7
+f
+sft
+st
+rotate l
+i t 6
+go 1 7
+f
+rotate r
+i l 6
+go 4 4
+go 3 6
+go 5 6
+quit

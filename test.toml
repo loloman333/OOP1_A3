@@ -1,0 +1,45 @@
+# Testcase Structure:
+#    name: String, // The name of the testcase
+#    subname: Option<String>, // used for unittests later
+#    testcase_type: String, //Only IO supported now
+#    description: Option<String>, // optional description
+#    args: Option<String>, // command line arguments
+#    cflags: Option<String>, // compile flags
+#    tags: Option<Tags>, // tags for unit tests
+#    in_file: Option<String>, // stdin file
+#    exp_file: Option<String>, // stdout file
+#    in_string: Option<String>, // stdin string (in_file has higher priority)
+#    exp_string: Option<String>, // stdout string (out_file has higher priority)
+#    exp_retvar: Option<i32>, // optional expected status code
+#    timeout: Option<i32>, // timeout in seconds .. default is 5 sec
+#    env_vars: Option<String>, // optional environment parameters RAND_SEED=123,foo=bar
+#    add_diff_mode: Option<String>, // diff-mode for additional file, can be "text" or "binary"
+#    add_out_file: Option<String>, // additional student file to diff,
+#    add_exp_file: Option<String>, // additional reference file to diff
+#    protected: Option<bool>, // optional boolean, set to true to mark a testcase as private, false by default
+
+[project_definition]
+project_name = "oop1"
+makefile_path = "."
+maketarget = "all"
+
+# public A3 
+[[testcases]]
+name = 'path_finding_1'
+testcase_type = "IO"
+description = "first path finding test"
+env_vars = 'RAND_SEED=7774234'
+exp_file = "tests/01/out"
+in_file = "tests/01/in"
+exp_retvar = 0
+protected = false
+
+[[testcases]]
+name = 'path_finding_noPath'
+testcase_type = "IO"
+description = "invalid paths due to walls blocking the way, try to go out of map through open wall"
+env_vars = 'RAND_SEED=7774234'
+exp_file = "tests/02/out"
+in_file = "tests/02/in"
+exp_retvar = 0
+protected = false
