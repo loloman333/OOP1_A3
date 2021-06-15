@@ -6,7 +6,7 @@ BUILDDIR      := build
 SOURCES       := $(wildcard *.cpp)
 OBJECTS       := $(patsubst %,$(BUILDDIR)/%,${SOURCES:.cpp=.o})
 
-TESTRUNNER_EXECUTABLE := ../testrunner
+TESTRUNNER_EXECUTABLE := testrunner
 
 .DEFAULT_GOAL := help
 .PHONY: reset clean bin lib all run test help

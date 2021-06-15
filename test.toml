@@ -33,6 +33,7 @@ exp_file = "tests/01/out"
 in_file = "tests/01/in"
 exp_retvar = 0
 protected = false
+timeout = 10
 
 [[testcases]]
 name = 'path_finding_noPath'
@@ -43,3 +44,4 @@ exp_file = "tests/02/out"
 in_file = "tests/02/in"
 exp_retvar = 0
 protected = false
+timeout = 10
