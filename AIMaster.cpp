@@ -9,9 +9,13 @@
 
 #include "AIMaster.hpp"
 #include "CommandMaster.hpp"
+#include "PrintMaster.hpp"
 #include "Game.hpp"
 #include "Player.hpp"
 #include "Tile.hpp"
+#include "Treasure.hpp"
+#include "TreasureTile.hpp"
+#include <vector>
 
 AIMaster::AIMaster(Game& game) : game_{game} {};
 
@@ -162,7 +166,61 @@ int AIMaster::calculateColumnChangeInDirection(Direction direction)
   }
 }
 
-void AIMaster::playAI()
+void AIMaster::playerGo()
 {
-  return;
+  std::vector<Treasure*> treasures = game_.getCurrentPlayer()->getCoveredStackRef();
+  if (treasures.empty())
+  {
+    // go to start
+  }
+  else
+  {
+    Treasure* current_treasure = treasures.back();
+    Coordinates treasure_coordinates = getTreasureCoordinates(current_treasure);
+    if (treasure_coordinates.first == -1 && treasure_coordinates.second == -1)
+    {
+      // treasure on free tile
+    }
+    else
+    {
+      // try to go to treasure
+    }
+  }
+}
+
+Coordinates AIMaster::getTreasureCoordinates(Treasure *treasure)
+{
+  for (int row = 0; row < static_cast<int>(BOARD_SIZE); row++)
+  {
+    for (int column = 0; column < static_cast<int>(BOARD_SIZE); column++)
+    {
+      if (game_.getBoard()[row][column]->hasTreasure())
+      {
+        TreasureTile* treasure_tile = dynamic_cast<TreasureTile*>(game_.getBoard()[row][column]);
+        if (treasure_tile->getTreasure() == treasure)
+        {
+          return std::make_pair<size_t, size_t>(row, column);
+        }
+      }
+    }
+  }
+  return std::make_pair<size_t, size_t>(-1, -1);
+}
+
+bool AIMaster::playAI()
+{
+  std::vector<std::string> command;
+  if (game_.getCommandMaster()->getInserted())
+  {
+    playerGo();
+  }
+  else
+  {
+    // insert + move (playerGo();)
+  }
+
+  game_.getPrintMaster()->printAIFinish();
+  command.clear();
+  command.push_back("finish");
+  return game_.getCommandMaster()->executeCommand(command);
 }

@@ -350,3 +350,8 @@ void PrintMaster::printAIName()
 {
   std::cout << UI_INFO << UI_AI_NAME << std::endl;
 }
+
+void PrintMaster::printAIFinish()
+{
+  std::cout << UI_INFO << UI_AI_FINISH << std::endl;
+}

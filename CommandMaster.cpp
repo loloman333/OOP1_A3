@@ -97,7 +97,7 @@ bool CommandMaster::executeCommand(std::vector<std::string>& tokens)
   }
   else if(command == "play")
   {
-    play(tokens);
+    return play(tokens);
   }
   else if(command == "whoami")
   {
@@ -949,6 +949,11 @@ bool CommandMaster::getShowGamefield()
   return show_gamefield_;
 }
 
+bool CommandMaster::getInserted()
+{
+  return inserted_;
+}
+
 void CommandMaster::useItem(std::vector<std::string> tokens)
 {
   if (tokens.size() == 1)
@@ -974,15 +979,16 @@ bool CommandMaster::is_digits(const std::string& str)
   return std::all_of(str.begin(), str.end(), ::isdigit);
 }
 
-void CommandMaster::play(std::vector<std::string> tokens)
+bool CommandMaster::play(std::vector<std::string> tokens)
 {
   if(tokens.size() == 1)
   {
-    game_.getAIMaster()->playAI();
+    return game_.getAIMaster()->playAI();
   }
   else
   {
     game_.getPrintMaster()->commandTakesNoArguments();
+    return false;
   }
 }
 

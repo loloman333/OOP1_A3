@@ -54,15 +54,6 @@ private:
 
   //--------------------------------------------------------------------------------------------------------------------
   ///
-  /// takes the tokens of the command and executes the corresponding command
-  ///
-  /// @param tokens the command tokens that have to be handled
-  /// @returns true if the game should end else false
-  //
-  bool executeCommand(std::vector<std::string>& tokens);
-
-  //--------------------------------------------------------------------------------------------------------------------
-  ///
   /// takes a string and a number reference and converts the given string into a size_t
   ///
   /// @param token the string to be converted
@@ -361,7 +352,7 @@ private:
   ///
   /// activates the AI to play this round
   //
-  void play(std::vector<std::string> tokens);
+  bool play(std::vector<std::string> tokens);
 
   //--------------------------------------------------------------------------------------------------------------------
   ///
@@ -461,6 +452,18 @@ public:
   /// @returns the direction in the opposite direction
   //
   Direction getOppositeDirection(Direction direction);
+
+  //Todo
+  bool getInserted();
+
+  //--------------------------------------------------------------------------------------------------------------------
+  ///
+  /// takes the tokens of the command and executes the corresponding command
+  ///
+  /// @param tokens the command tokens that have to be handled
+  /// @returns true if the game should end else false
+  //
+  bool executeCommand(std::vector<std::string>& tokens);
 };
 
 #endif // A2_COMMANDMASTER_HPP
