@@ -15,6 +15,7 @@
 #include "Tile.hpp"
 #include "Treasure.hpp"
 #include "TreasureTile.hpp"
+#include "StartTile.hpp"
 #include <vector>
 
 AIMaster::AIMaster(Game& game) : game_{game} {};
@@ -40,10 +41,8 @@ bool AIMaster::isConnected(Player* current_player, size_t to_row, size_t to_colu
   while (current_tile != nullptr)
   {
 
-    // Phase 1: Add neighbors
     bool found_path = addNeighbors(current_tile, current_row, current_column, to_tile, discovered, unvisited);
 
-    // Stop if neighbor is to_item
     if (found_path)
     {
       return true;
@@ -117,8 +116,8 @@ std::vector<TileAndCoordinates> AIMaster::getReachableNeighborsOfTile(Tile* tile
         Tile* neighbor = game_.getBoard()[new_row][new_column];
         if (!(neighbor->isWallInDirection(game_.getCommandMaster()->getOppositeDirection(direction))))
         {
-          Coordinates cords = std::make_pair<size_t, size_t>(new_row, new_column);
-          TileAndCoordinates tile_info = std::pair<Tile*, Coordinates>{game_.getBoard()[new_row][new_column], cords};
+          Coordinates cords{new_row, new_column};
+          TileAndCoordinates tile_info{game_.getBoard()[new_row][new_column], cords};
 
           neighbors.push_back(tile_info);
         }
@@ -166,26 +165,33 @@ int AIMaster::calculateColumnChangeInDirection(Direction direction)
   }
 }
 
-void AIMaster::playerGo()
+void AIMaster::playerGo(Coordinates desired_coordinates)
 {
-  std::vector<Treasure*> treasures = game_.getCurrentPlayer()->getCoveredStackRef();
-  if (treasures.empty())
+  Player* current_player = game_.getCurrentPlayer();
+  int to_row = desired_coordinates.first;
+  int to_column = desired_coordinates.second;
+  std::vector<std::string> command;
+
+  if (to_row == -1 && to_column == -1)
   {
-    // go to start
+    return; // TODO: maybe move somewhere?
   }
-  else
+
+  command.push_back("go");
+  command.push_back(std::to_string(to_row + 1));
+  command.push_back(std::to_string(to_column + 1));
+  game_.getPrintMaster()->printAICommand(command);
+  game_.getCommandMaster()->executeCommand(command);
+
+  int current_row = current_player->getRow();
+  int current_column = current_player->getCol();
+
+  if (current_row == to_row && current_column == to_column)
   {
-    Treasure* current_treasure = treasures.back();
-    Coordinates treasure_coordinates = getTreasureCoordinates(current_treasure);
-    if (treasure_coordinates.first == -1 && treasure_coordinates.second == -1)
-    {
-      // treasure on free tile
-    }
-    else
-    {
-      // try to go to treasure
-    }
+    return;
   }
+
+  // TODO: Move close to desired_coordinates?
 }
 
 Coordinates AIMaster::getTreasureCoordinates(Treasure *treasure)
@@ -199,28 +205,65 @@ Coordinates AIMaster::getTreasureCoordinates(Treasure *treasure)
         TreasureTile* treasure_tile = dynamic_cast<TreasureTile*>(game_.getBoard()[row][column]);
         if (treasure_tile->getTreasure() == treasure)
         {
-          return std::make_pair<size_t, size_t>(row, column);
+          return Coordinates{row, column};
         }
       }
     }
   }
-  return std::make_pair<size_t, size_t>(-1, -1);
+  return Coordinates{-1, -1};
+}
+
+Coordinates AIMaster::getHomeBaseCoordinates()
+{
+  Player* current_player = game_.getCurrentPlayer();
+
+  std::vector<std::vector<Tile*>> board = game_.getBoard();
+  std::vector<TileAndCoordinates> bases = 
+  {
+    TileAndCoordinates{board[0][0], Coordinates{0, 0}},
+    TileAndCoordinates{board[6][0], Coordinates{6, 0}}, 
+    TileAndCoordinates{board[0][6], Coordinates{0, 6}}, 
+    TileAndCoordinates{board[6][6], Coordinates{6, 6}}
+  };
+
+  for (TileAndCoordinates base_info : bases)
+  {
+    if (dynamic_cast<StartTile*>(base_info.first)->getPlayerColor() == current_player->getPlayerColor())
+    {
+      return base_info.second;
+    }
+  }
+
+  return Coordinates{-1, -1};
+}
+
+Coordinates AIMaster::getDesiredCoordinates()
+{
+  std::vector<Treasure*> treasures = game_.getCurrentPlayer()->getCoveredStackRef();
+  if (treasures.empty())
+  {
+    return getHomeBaseCoordinates();
+  }
+  else
+  {
+    Treasure* current_treasure = treasures.back();
+    return getTreasureCoordinates(current_treasure);
+  }
 }
 
 bool AIMaster::playAI()
 {
-  std::vector<std::string> command;
-  if (game_.getCommandMaster()->getInserted())
+  Coordinates desired_coordinates = getDesiredCoordinates();
+
+  if (! (game_.getCommandMaster()->getInserted()))
   {
-    playerGo();
-  }
-  else
-  {
-    // insert + move (playerGo();)
+    //TODO: makeInsert(desired_coordinates);
+    desired_coordinates = getDesiredCoordinates();
   }
 
-  game_.getPrintMaster()->printAIFinish();
-  command.clear();
-  command.push_back("finish");
+  playerGo(desired_coordinates);
+
+  std::vector<std::string> command = {"finish"};
+  game_.getPrintMaster()->printAICommand(command);
   return game_.getCommandMaster()->executeCommand(command);
 }

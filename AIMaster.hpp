@@ -23,7 +23,7 @@ class Treasure;
 enum class Direction;
 
 typedef std::pair<int, int> Coordinates;
-typedef std::pair<Tile*, std::pair<size_t, size_t>> TileAndCoordinates;
+typedef std::pair<Tile*, Coordinates> TileAndCoordinates;
 
 class AIMaster
 {
@@ -41,7 +41,9 @@ private:
   int calculateColumnChangeInDirection(Direction direction);
 
   // go
-  void playerGo();
+  void playerGo(Coordinates desired_coordinates);
+  Coordinates getDesiredCoordinates();
+  Coordinates getHomeBaseCoordinates();
   Coordinates getTreasureCoordinates(Treasure* treasure);
 
 

@@ -351,7 +351,13 @@ void PrintMaster::printAIName()
   std::cout << UI_INFO << UI_AI_NAME << std::endl;
 }
 
-void PrintMaster::printAIFinish()
+void PrintMaster::printAICommand(std::vector<std::string> tokens)
 {
-  std::cout << UI_INFO << UI_AI_FINISH << std::endl;
+  std::cout << UI_INFO << UI_AI_COMMAND;
+
+  for (size_t index = 0; index < tokens.size(); index++)
+  {
+    std::cout << tokens[index] << " "; //TODO Leerzeichen am Ende schlimm????
+  }
+  std::cout << std::endl;
 }
