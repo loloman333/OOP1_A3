@@ -54,7 +54,7 @@ const std::string ROPE_TIED_2 = " tied up.";
 const std::string UI_BOMB = "BOOOOOOOOOMMMMM!!!!";
 const std::string UI_AI_NAME = "Team: Triochter Bande";
 const std::string UI_INFO = "[INFO] ";
-const std::string UI_AI_COMMAND = " Command: ";
+const std::string UI_AI_COMMAND = "Command: ";
 
 const size_t UI_PLAYER_TITLE_OFFSET = 58;
 const size_t UI_ARROW_OFFSET = 17;
