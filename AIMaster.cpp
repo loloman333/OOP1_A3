@@ -20,6 +20,74 @@
 
 AIMaster::AIMaster(Game& game) : game_{game} {};
 
+bool AIMaster::playAI()
+{
+  Coordinates desired_coordinates = getDesiredCoordinates();
+
+  std::vector<std::vector<std::string>> commands;
+
+  if (! (game_.getCommandMaster()->getInserted()))
+  {
+    desired_coordinates = getDesiredCoordinates(); // TODO: WHY again?
+    makeInsert(commands, desired_coordinates);
+  }
+
+  playerGo(commands, desired_coordinates);
+
+  return executeAllCommands(commands);
+}
+
+bool AIMaster::executeAllCommands(std::vector<std::vector<std::string>> &commands)
+{
+  std::vector<std::string> finish_command = {"finish"};
+
+  for (std::vector<std::string> command : commands)
+  {
+    game_.getPrintMaster()->printAICommand(command);
+  }
+  game_.getPrintMaster()->printAICommand(finish_command);
+
+  for (std::vector<std::string> command : commands)
+  {
+    game_.getCommandMaster()->executeCommand(command);
+  }
+  return game_.getCommandMaster()->executeCommand(finish_command);
+}
+
+void AIMaster::makeInsert(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates)
+{
+  if (desired_coordinates.first == -1 && desired_coordinates.second == -1)
+  {
+    insertTreasure();
+  }
+  else if (isConnected(game_.getCurrentPlayer(), desired_coordinates.first + 1, desired_coordinates.second + 1))
+  {
+    insertAlreadyConnected(commands, desired_coordinates);
+  }
+  else
+  {
+    std::vector<std::string> insert = {"insert", "right", "6"};
+    commands.push_back(insert);
+  }
+}
+
+void AIMaster::insertAlreadyConnected(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates)
+{
+  //size_t player_row = game_.getCurrentPlayer()->getRow();
+  //size_t player_column = game_.getCurrentPlayer()->getCol();
+
+  std::vector<std::string> insert = {"insert", "right", "6"};
+  commands.push_back(insert);
+}
+
+void AIMaster::insertTreasure()
+{
+  size_t player_row = game_.getCurrentPlayer()->getRow();
+  size_t player_column = game_.getCurrentPlayer()->getCol();
+
+  // TODO
+}
+
 bool AIMaster::isConnected(Player* current_player, size_t to_row, size_t to_column)
 {
   to_row -= 1;
@@ -165,7 +233,7 @@ int AIMaster::calculateColumnChangeInDirection(Direction direction)
   }
 }
 
-void AIMaster::playerGo(Coordinates desired_coordinates)
+void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates)
 {
   Player* current_player = game_.getCurrentPlayer();
   int to_row = desired_coordinates.first;
@@ -177,12 +245,6 @@ void AIMaster::playerGo(Coordinates desired_coordinates)
     return; // TODO: maybe move somewhere?
   }
 
-  command.push_back("go");
-  command.push_back(std::to_string(to_row + 1));
-  command.push_back(std::to_string(to_column + 1));
-  game_.getPrintMaster()->printAICommand(command);
-  game_.getCommandMaster()->executeCommand(command);
-
   int current_row = current_player->getRow();
   int current_column = current_player->getCol();
 
@@ -191,7 +253,17 @@ void AIMaster::playerGo(Coordinates desired_coordinates)
     return;
   }
 
-  // TODO: Move close to desired_coordinates?
+  if (isConnected(current_player, to_row + 1, to_column + 1))
+  {
+    command.push_back("go");
+    command.push_back(std::to_string(to_row + 1));
+    command.push_back(std::to_string(to_column + 1));
+    commands.push_back(command);
+  }
+  else
+  {
+    // TODO: Not connected - move as close as possible
+  }
 }
 
 Coordinates AIMaster::getTreasureCoordinates(Treasure *treasure)
@@ -221,9 +293,9 @@ Coordinates AIMaster::getHomeBaseCoordinates()
   std::vector<TileAndCoordinates> bases = 
   {
     TileAndCoordinates{board[0][0], Coordinates{0, 0}},
-    TileAndCoordinates{board[6][0], Coordinates{6, 0}}, 
-    TileAndCoordinates{board[0][6], Coordinates{0, 6}}, 
-    TileAndCoordinates{board[6][6], Coordinates{6, 6}}
+    TileAndCoordinates{board[BOARD_SIZE - 1][0], Coordinates{6, 0}},
+    TileAndCoordinates{board[0][BOARD_SIZE - 1], Coordinates{0, BOARD_SIZE - 1}},
+    TileAndCoordinates{board[6][BOARD_SIZE - 1], Coordinates{6, BOARD_SIZE - 1}}
   };
 
   for (TileAndCoordinates base_info : bases)
@@ -251,19 +323,3 @@ Coordinates AIMaster::getDesiredCoordinates()
   }
 }
 
-bool AIMaster::playAI()
-{
-  Coordinates desired_coordinates = getDesiredCoordinates();
-
-  if (! (game_.getCommandMaster()->getInserted()))
-  {
-    //TODO: makeInsert(desired_coordinates);
-    desired_coordinates = getDesiredCoordinates();
-  }
-
-  playerGo(desired_coordinates);
-
-  std::vector<std::string> command = {"finish"};
-  game_.getPrintMaster()->printAICommand(command);
-  return game_.getCommandMaster()->executeCommand(command);
-}

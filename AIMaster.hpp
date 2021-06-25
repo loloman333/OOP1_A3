@@ -30,8 +30,9 @@ class AIMaster
 private:
   Game& game_;
 
-  //Pathfinding
+  bool executeAllCommands(std::vector<std::vector<std::string>>& commands);
 
+  //Pathfinding
   bool addNeighbors(Tile* current_tile, size_t current_row, size_t current_column, Tile* to_tile,
                     std::set<Tile*>& discovered, std::map<Tile*, Coordinates>& unvisited);
   Tile* chooseNextTile(size_t to_row, size_t to_column, std::map<Tile*, Coordinates>&
@@ -41,13 +42,17 @@ private:
   int calculateColumnChangeInDirection(Direction direction);
 
   // go
-  void playerGo(Coordinates desired_coordinates);
+  void playerGo(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates);
   Coordinates getDesiredCoordinates();
   Coordinates getHomeBaseCoordinates();
   Coordinates getTreasureCoordinates(Treasure* treasure);
 
 
   // insert
+  void makeInsert(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates);
+  void insertTreasure();
+  void insertAlreadyConnected(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates);
+  bool isMoveableRowCol(size_t row_col);
 
 public:
   AIMaster(Game& game);

@@ -188,17 +188,6 @@ private:
 
   //--------------------------------------------------------------------------------------------------------------------
   ///
-  /// Checks if given row, col is in a moveabline line on the board
-  ///
-  /// @param row_index
-  /// @param col_index
-  ///
-  /// @return true if the coordinates are in moveable line
-  //
-  bool isInMoveableLine(size_t row_index, size_t col_index);
-
-  //--------------------------------------------------------------------------------------------------------------------
-  ///
   /// Free memory
   ///
   //--------------------------------------------------------------------------------------------------------------------
@@ -370,6 +359,17 @@ public:
   /// @param choice, true if you want to play a game with bonus items
   //
   void setBonus(bool choice);
+
+  //--------------------------------------------------------------------------------------------------------------------
+  ///
+  /// Checks if given row, col is in a moveable line line on the board
+  ///
+  /// @param row_index
+  /// @param col_index
+  ///
+  /// @return true if the coordinates are in moveable line
+  //
+  bool isInMoveableLine(size_t row_index, size_t col_index);
 };
 
 #endif // A2_GAME_HPP
