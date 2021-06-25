@@ -28,8 +28,8 @@ bool AIMaster::playAI()
 
   if (! (game_.getCommandMaster()->getInserted()))
   {
-    desired_coordinates = getDesiredCoordinates(); // TODO: WHY again?
     makeInsert(commands, desired_coordinates);
+    desired_coordinates = getDesiredCoordinates();
   }
 
   playerGo(commands, desired_coordinates);
@@ -56,36 +56,116 @@ bool AIMaster::executeAllCommands(std::vector<std::vector<std::string>> &command
 
 void AIMaster::makeInsert(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates)
 {
-  if (desired_coordinates.first == -1 && desired_coordinates.second == -1)
+  std::vector<std::string> directions = {"top", "left", "bottom", "right"};
+  std::vector<std::string> indices = {"2", "4", "6"};
+  
+  for (std::string direction : directions)
   {
-    insertTreasure();
+    for (std::string index : indices)
+    {
+      if (testInsert(direction, index, desired_coordinates) && checkLastInsert(direction, index))
+      {
+        std::vector<std::string> insert = {"insert", direction, index};         
+        commands.push_back(insert);
+        return;
+      }
+      undoFakeInsert(direction, index);
+    }
   }
-  else if (isConnected(game_.getCurrentPlayer(), desired_coordinates.first + 1, desired_coordinates.second + 1))
+
+  std::vector<std::string> insert;      
+  if(checkLastInsert("left", "2"))
   {
-    insertAlreadyConnected(commands, desired_coordinates);
+    insert = {"insert", "left", "2"};
+    fakeInsertRow("left", "2");
   }
   else
   {
-    std::vector<std::string> insert = {"insert", "right", "6"};
-    commands.push_back(insert);
+    insert = {"insert", "right", "2"};
+    fakeInsertRow("right", "2");
   }
-}
-
-void AIMaster::insertAlreadyConnected(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates)
-{
-  //size_t player_row = game_.getCurrentPlayer()->getRow();
-  //size_t player_column = game_.getCurrentPlayer()->getCol();
-
-  std::vector<std::string> insert = {"insert", "right", "6"};
+     
   commands.push_back(insert);
 }
 
-void AIMaster::insertTreasure()
+bool AIMaster::testInsert(std::string direction, std::string index, Coordinates desired_coordinates)
 {
-  size_t player_row = game_.getCurrentPlayer()->getRow();
-  size_t player_column = game_.getCurrentPlayer()->getCol();
+  if (direction == "left" || direction == "right")
+  {
+    fakeInsertRow(direction, index);
+  }
+  else
+  {
+    fakeInsertColumn(direction, index);
+  }
 
-  // TODO
+  if (isConnected(game_.getCurrentPlayer(), desired_coordinates.first + 1, desired_coordinates.second + 1))
+  {
+    return true;
+  }
+
+  return false;
+}
+
+void AIMaster::fakeInsertRow(std::string direction, std::string index)
+{
+  size_t row = std::stoi(index) - 1;
+  size_t last_tile_index = BOARD_SIZE - 1;
+  Tile* temp_free_tile = game_.getFreeTile();
+  std::vector<std::vector<Tile*>>& board = game_.getBoard();
+  if (direction == "l" || direction == "left")
+  {
+    game_.setFreeTile(board[row][last_tile_index]);
+    for (size_t column = last_tile_index; column > 0; column--)
+    {
+      board[row][column] = board[row][column - 1];
+      game_.getCommandMaster()->playersUpdateRowColumn(board[row][column]->getPlayers(), row, column);
+    }
+    board[row][0] = temp_free_tile;
+    game_.getCommandMaster()->movePlayersToTile(game_.getFreeTile(), row, 0);
+  }
+  else
+  {
+    game_.setFreeTile(board[row][0]);
+    for (size_t column = 0; column < last_tile_index; column++)
+    {
+      board[row][column] = board[row][column + 1];
+      game_.getCommandMaster()->playersUpdateRowColumn(board[row][column]->getPlayers(), row, column);
+    }
+    board[row][BOARD_SIZE - 1] = temp_free_tile;
+    game_.getCommandMaster()->movePlayersToTile(game_.getFreeTile(), row, BOARD_SIZE - 1);
+  }
+}
+
+void AIMaster::fakeInsertColumn(std::string direction, std::string index)
+{
+  size_t column = std::stoi(index) - 1;
+  size_t last_tile_index = BOARD_SIZE - 1;
+  Tile* temp_free_tile = game_.getFreeTile();
+  std::vector<std::vector<Tile*>>& board = game_.getBoard();
+
+  if (direction == "t" || direction == "top")
+  {
+    game_.setFreeTile(board[last_tile_index][column]);
+    for (size_t row = BOARD_SIZE - 1; row > 0; row--)
+    {
+      board[row][column] = board[row - 1][column];
+      game_.getCommandMaster()->playersUpdateRowColumn(board[row][column]->getPlayers(), row, column);
+    }
+    board[0][column] = temp_free_tile;
+    game_.getCommandMaster()->movePlayersToTile(game_.getFreeTile(), 0, column);
+  }
+  else
+  {
+    game_.setFreeTile(board[0][column]);
+    for (size_t row = 0; row < BOARD_SIZE - 1; row++)
+    {
+      board[row][column] = board[row + 1][column];
+      game_.getCommandMaster()->playersUpdateRowColumn(board[row][column]->getPlayers(), row, column);
+    }
+    board[BOARD_SIZE - 1][column] = temp_free_tile;
+    game_.getCommandMaster()->movePlayersToTile(game_.getFreeTile(), BOARD_SIZE - 1, column);
+  }
 }
 
 bool AIMaster::isConnected(Player* current_player, size_t to_row, size_t to_column)
@@ -239,17 +319,26 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
   int to_row = desired_coordinates.first;
   int to_column = desired_coordinates.second;
   std::vector<std::string> command;
+  bool faked_insert = false;
+  std::string fake_insert_direction;
+  std::string fake_insert_index;
 
-  if (to_row == -1 && to_column == -1)
+  if (commands.size() == 1)
   {
-    return; // TODO: maybe move somewhere?
+    fake_insert_direction = commands[0][1];
+    fake_insert_index = commands[0][2];
+    faked_insert = true;
   }
 
   int current_row = current_player->getRow();
-  int current_column = current_player->getCol();
+  int current_column = current_player->getCol();  
 
-  if (current_row == to_row && current_column == to_column)
+  if ((to_row == -1 && to_column == -1) || (current_row == to_row && current_column == to_column))
   {
+    if (faked_insert)
+    {
+      undoFakeInsert(fake_insert_direction, fake_insert_index);
+    }
     return;
   }
 
@@ -263,6 +352,23 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
   else
   {
     // TODO: Not connected - move as close as possible
+  }
+
+  if (faked_insert)
+  {
+    undoFakeInsert(fake_insert_direction, fake_insert_index);
+  }
+}
+
+void AIMaster::undoFakeInsert(std::string direction, std::string index)
+{
+  if (direction == "left" || direction == "right")
+  {
+    fakeInsertRow(getOppositeDirection(direction), index);
+  }
+  else
+  {
+    fakeInsertColumn(getOppositeDirection(direction), index);
   }
 }
 
@@ -321,5 +427,37 @@ Coordinates AIMaster::getDesiredCoordinates()
     Treasure* current_treasure = treasures.back();
     return getTreasureCoordinates(current_treasure);
   }
+}
+
+std::string AIMaster::getOppositeDirection(std::string direction)
+{
+  if(direction == "left")
+  {
+    return "right";
+  }
+  else if(direction == "right")
+  {
+    return "left";
+  }
+  else if(direction == "top")
+  {
+    return "bottom";
+  }
+  else
+  {
+    return "top";
+  }
+}
+
+bool AIMaster::checkLastInsert(std::string direction, std::string index)
+{
+  if (game_.getCommandMaster()->last_insert_row_col_ == static_cast<size_t>(std::stoi(index)))
+  {
+    if (game_.getCommandMaster()->last_insert_direction_ == getOppositeDirection(direction))
+    {
+      return false;
+    }
+  }
+  return true;
 }
 

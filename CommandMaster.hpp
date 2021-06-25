@@ -49,9 +49,6 @@ private:
   bool show_treasure_ = false;
   bool show_gamefield_ = true;
 
-  std::string last_insert_direction_ = "";
-  size_t last_insert_row_col_ = 0;
-
   //--------------------------------------------------------------------------------------------------------------------
   ///
   /// takes a string and a number reference and converts the given string into a size_t
@@ -244,26 +241,6 @@ private:
 
   //--------------------------------------------------------------------------------------------------------------------
   ///
-  /// updates the players coordinates on the field if they have been moved with the insert
-  ///
-  /// @param players the players that have been moved with a tile
-  /// @param row the new row of the tile
-  /// @param column the new column of the tile
-  //
-  void playersUpdateRowColumn(std::vector<Player*> players, size_t row, size_t column);
-
-  //--------------------------------------------------------------------------------------------------------------------
-  ///
-  /// moves a player onto another Tile
-  ///
-  /// @param from the tile the players need to be removed from
-  /// @param row the row of the new tile
-  /// @param column the column of the new tile
-  //
-  void movePlayersToTile(Tile* from, size_t row, size_t column);
-
-  //--------------------------------------------------------------------------------------------------------------------
-  ///
   /// moves the current player to the location given in the command tokens
   ///
   /// @param tokens the command tokens that have to be handled
@@ -365,6 +342,10 @@ private:
   void teleportPlayer(Player* current_player, size_t to_row, size_t to_column);
 
 public:
+
+  std::string last_insert_direction_ = "";
+  size_t last_insert_row_col_ = 0;
+
   //--------------------------------------------------------------------------------------------------------------------
   ///
   /// constructor with a reference to the game
@@ -464,6 +445,26 @@ public:
   /// @returns true if the game should end else false
   //
   bool executeCommand(std::vector<std::string>& tokens);
+
+  //--------------------------------------------------------------------------------------------------------------------
+  ///
+  /// updates the players coordinates on the field if they have been moved with the insert
+  ///
+  /// @param players the players that have been moved with a tile
+  /// @param row the new row of the tile
+  /// @param column the new column of the tile
+  //
+  void playersUpdateRowColumn(std::vector<Player*> players, size_t row, size_t column);
+
+  //--------------------------------------------------------------------------------------------------------------------
+  ///
+  /// moves a player onto another Tile
+  ///
+  /// @param from the tile the players need to be removed from
+  /// @param row the row of the new tile
+  /// @param column the column of the new tile
+  //
+  void movePlayersToTile(Tile* from, size_t row, size_t column);
 };
 
 #endif // A2_COMMANDMASTER_HPP

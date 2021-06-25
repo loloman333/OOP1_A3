@@ -50,9 +50,12 @@ private:
 
   // insert
   void makeInsert(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates);
-  void insertTreasure();
-  void insertAlreadyConnected(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates);
-  bool isMoveableRowCol(size_t row_col);
+  bool testInsert(std::string direction, std::string index, Coordinates desired_coordinates);
+  void fakeInsertRow(std::string direction, std::string index);
+  void fakeInsertColumn(std::string direction, std::string index);
+  std::string getOppositeDirection(std::string direction);
+  void undoFakeInsert(std::string direction, std::string index);
+  bool checkLastInsert(std::string direction, std::string index);
 
 public:
   AIMaster(Game& game);
