@@ -56,6 +56,7 @@ private:
   std::string getOppositeDirection(std::string direction);
   void undoFakeInsert(std::string direction, std::string index);
   bool checkLastInsert(std::string direction, std::string index);
+  void randomInsert(std::vector<std::vector<std::string>>& commands);
 
 public:
   AIMaster(Game& game);

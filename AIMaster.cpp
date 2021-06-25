@@ -73,18 +73,34 @@ void AIMaster::makeInsert(std::vector<std::vector<std::string>>& commands, Coord
     }
   }
 
-  std::vector<std::string> insert;      
-  if(checkLastInsert("left", "2"))
+  randomInsert(commands);
+}
+
+void AIMaster::randomInsert(std::vector<std::vector<std::string>> &commands)
+{
+  std::vector<std::string> directions = {"top", "left", "bottom", "right"};
+  std::vector<std::string> indices = {"2", "4", "6",};
+
+  size_t random_direction_index;
+  size_t random_index_index;
+
+  do
   {
-    insert = {"insert", "left", "2"};
-    fakeInsertRow("left", "2");
+    random_direction_index = rand() % 4;
+    random_index_index = rand() % 3;
+  } while (!checkLastInsert(directions[random_direction_index], indices[random_index_index]));
+
+  std::vector<std::string> insert = {"insert", directions[random_direction_index], indices[random_index_index]};
+
+  if (directions[random_direction_index] == "left" || directions[random_direction_index] == "right")
+  {
+    fakeInsertRow(directions[random_direction_index], indices[random_index_index]);
   }
   else
   {
-    insert = {"insert", "right", "2"};
-    fakeInsertRow("right", "2");
+    fakeInsertColumn(directions[random_direction_index], indices[random_index_index]);
   }
-     
+
   commands.push_back(insert);
 }
 
