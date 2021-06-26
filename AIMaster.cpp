@@ -16,7 +16,8 @@
 #include "StartTile.hpp"
 #include <vector>
 
-AIMaster::AIMaster(Game& game) : game_{game} {};
+AIMaster::AIMaster(Game &game) : game_{game}
+{};
 
 bool AIMaster::playAI()
 {
@@ -24,7 +25,7 @@ bool AIMaster::playAI()
 
   std::vector<std::vector<std::string>> commands;
 
-  if (! (game_.getCommandMaster()->getInserted()))
+  if (!(game_.getCommandMaster()->getInserted()))
   {
     makeInsert(commands, desired_coordinates);
     desired_coordinates = getDesiredCoordinates();
@@ -52,11 +53,11 @@ bool AIMaster::executeAllCommands(std::vector<std::vector<std::string>> &command
   return game_.getCommandMaster()->executeCommand(finish_command);
 }
 
-void AIMaster::makeInsert(std::vector<std::vector<std::string>>& commands, Coordinates& desired_coordinates)
+void AIMaster::makeInsert(std::vector<std::vector<std::string>> &commands, Coordinates &desired_coordinates)
 {
   std::vector<std::string> directions = {"top", "left", "bottom", "right"};
   std::vector<std::string> indices = {"2", "4", "6"};
-  
+
   for (std::string direction : directions)
   {
     for (std::string index : indices)
@@ -127,8 +128,7 @@ void AIMaster::randomInsert(std::vector<std::vector<std::string>> &commands)
   if (directions[random_direction_index] == "left" || directions[random_direction_index] == "right")
   {
     fakeInsertRow(directions[random_direction_index], indices[random_index_index]);
-  }
-  else
+  } else
   {
     fakeInsertColumn(directions[random_direction_index], indices[random_index_index]);
   }
@@ -136,13 +136,12 @@ void AIMaster::randomInsert(std::vector<std::vector<std::string>> &commands)
   commands.push_back(insert);
 }
 
-bool AIMaster::testInsert(std::string direction, std::string index, Coordinates& desired_coordinates)
+bool AIMaster::testInsert(std::string direction, std::string index, Coordinates &desired_coordinates)
 {
   if (direction == "left" || direction == "right")
   {
     fakeInsertRow(direction, index);
-  }
-  else
+  } else
   {
     fakeInsertColumn(direction, index);
   }
@@ -154,7 +153,7 @@ bool AIMaster::testInsert(std::string direction, std::string index, Coordinates&
     return false;
   }
 
-  if (isConnected(game_.getCurrentPlayer(), desired_coordinates.first + 1, desired_coordinates.second + 1))
+  if (getWallsToTile(game_.getCurrentPlayer(), desired_coordinates.first + 1, desired_coordinates.second + 1) == 0)
   {
     return true;
   }
@@ -166,8 +165,8 @@ void AIMaster::fakeInsertRow(std::string direction, std::string index)
 {
   size_t row = std::stoi(index) - 1;
   size_t last_tile_index = BOARD_SIZE - 1;
-  Tile* temp_free_tile = game_.getFreeTile();
-  std::vector<std::vector<Tile*>>& board = game_.getBoard();
+  Tile *temp_free_tile = game_.getFreeTile();
+  std::vector<std::vector<Tile *>> &board = game_.getBoard();
   if (direction == "l" || direction == "left")
   {
     game_.setFreeTile(board[row][last_tile_index]);
@@ -178,8 +177,7 @@ void AIMaster::fakeInsertRow(std::string direction, std::string index)
     }
     board[row][0] = temp_free_tile;
     game_.getCommandMaster()->movePlayersToTile(game_.getFreeTile(), row, 0);
-  }
-  else
+  } else
   {
     game_.setFreeTile(board[row][0]);
     for (size_t column = 0; column < last_tile_index; column++)
@@ -196,8 +194,8 @@ void AIMaster::fakeInsertColumn(std::string direction, std::string index)
 {
   size_t column = std::stoi(index) - 1;
   size_t last_tile_index = BOARD_SIZE - 1;
-  Tile* temp_free_tile = game_.getFreeTile();
-  std::vector<std::vector<Tile*>>& board = game_.getBoard();
+  Tile *temp_free_tile = game_.getFreeTile();
+  std::vector<std::vector<Tile *>> &board = game_.getBoard();
 
   if (direction == "t" || direction == "top")
   {
@@ -209,8 +207,7 @@ void AIMaster::fakeInsertColumn(std::string direction, std::string index)
     }
     board[0][column] = temp_free_tile;
     game_.getCommandMaster()->movePlayersToTile(game_.getFreeTile(), 0, column);
-  }
-  else
+  } else
   {
     game_.setFreeTile(board[0][column]);
     for (size_t row = 0; row < BOARD_SIZE - 1; row++)
@@ -223,111 +220,131 @@ void AIMaster::fakeInsertColumn(std::string direction, std::string index)
   }
 }
 
-bool AIMaster::isConnected(Player* current_player, size_t to_row, size_t to_column)
+size_t AIMaster::getWallsToTile(Player *current_player, size_t to_row, size_t to_column)
 {
   to_row -= 1;
   to_column -= 1;
 
-  Tile* to_tile = game_.getBoard()[to_row][to_column];
+  Tile *to_tile = game_.getBoard()[to_row][to_column];
   size_t current_row = current_player->getRow();
   size_t current_column = current_player->getCol();
-  Tile* current_tile = game_.getBoard()[current_row][current_column];
-  
-  std::set<Tile*> discovered{current_tile};
-  std::map<Tile*, Coordinates> unvisited{};
+  Tile *current_tile = game_.getBoard()[current_row][current_column];
+
+  size_t wall_step = 0;
+
+  TileInfoMap discovered{ std::pair<Tile*, CoordinatesAndWalls>{current_tile, CoordinatesAndWalls{Coordinates{current_row, current_column}, 0}}};
+  TileInfoMap unvisited{};
 
   if (current_tile == to_tile)
   {
-    return true;
-  } 
+    return 0;
+  }
 
   while (current_tile != nullptr)
   {
+    addNeighbors(current_tile, discovered, unvisited);
 
-    bool found_path = addNeighbors(current_tile, current_row, current_column, to_tile, discovered, unvisited);
-
-    if (found_path)
+    if (discovered.find(to_tile) != discovered.end() && wall_step > discovered[to_tile].second)
     {
-      return true;
+      return discovered[to_tile].second;
     }
 
-    current_tile = chooseNextTile(to_row, to_column, unvisited, current_row, current_column);
+    current_tile = chooseNextTile(to_row, to_column, unvisited, current_row, current_column, wall_step);
   }
 
-  return false;
+  return discovered[to_tile].second;
 }
 
-Tile* AIMaster::chooseNextTile(size_t to_row, size_t to_column, std::map<Tile*, Coordinates>& 
-    unvisited, size_t& current_row, size_t& current_column)
+Tile *AIMaster::chooseNextTile(size_t to_row, size_t to_column, TileInfoMap& unvisited, size_t &current_row, size_t &current_column, size_t& wall_step)
 {
-  Tile* next_tile = nullptr;
-  int min_distance = BOARD_SIZE * 2; 
-  for (TileAndCoordinates entry : unvisited)
-  { 
-    int row_distance = abs(static_cast<int>(entry.second.first) - static_cast<int>(to_row));
-    int col_distance = abs(static_cast<int>(entry.second.second) - static_cast<int>(to_column));
-    int distance = col_distance + row_distance;
+  Tile *next_tile = nullptr;
 
-    if (distance < min_distance)
+  if (unvisited.empty())
+  {
+    return next_tile;
+  }
+
+  for (std::pair<Tile*, CoordinatesAndWalls> entry : unvisited)
+  {
+    if (entry.second.second == wall_step)
     {
-      min_distance = distance;
       next_tile = entry.first;
-      current_row = entry.second.first;
-      current_column = entry.second.second;
+      current_row = entry.second.first.first;
+      current_column = entry.second.first.second;
     }
   }
 
   unvisited.erase(next_tile);
+
+  if (next_tile == nullptr)
+  {
+    return chooseNextTile(to_row, to_column, unvisited, current_row, current_column, ++wall_step);
+  }
+
   return next_tile;
 }
 
-bool AIMaster::addNeighbors(Tile* current_tile, size_t current_row, size_t current_column, Tile* to_tile, 
-  std::set<Tile*>& discovered, std::map<Tile*, Coordinates>& unvisited)
+void AIMaster::addNeighbors(Tile *current_tile, TileInfoMap &discovered, TileInfoMap &unvisited)
 {
-  std::vector<TileAndCoordinates> neighbors = getReachableNeighborsOfTile(current_tile, current_row, current_column);
-  for (TileAndCoordinates neighbor : neighbors)
+  std::vector<TileCoordinatesAndWalls> neighbors = getReachableNeighborsOfTile(current_tile, discovered[current_tile]);
+
+  for (TileCoordinatesAndWalls neighbor : neighbors)
   {
-    if (neighbor.first == to_tile)
+    Tile* neighbor_pointer = std::get<0>(neighbor);
+    Coordinates neighbor_coordinates= std::get<1>(neighbor);
+    size_t neighbor_walls = std::get<2>(neighbor);
+
+    if (discovered.find(neighbor_pointer) == discovered.end())
     {
-      return true;
-    } 
+      discovered.insert(std::pair<Tile*, CoordinatesAndWalls>{neighbor_pointer, CoordinatesAndWalls{neighbor_coordinates, neighbor_walls}});
+      unvisited.insert(std::pair<Tile*, CoordinatesAndWalls>{neighbor_pointer, CoordinatesAndWalls{neighbor_coordinates, neighbor_walls}});
+    }
 
-    bool inserted = discovered.insert(neighbor.first).second;
-    if (inserted)
+    if (neighbor_walls < discovered[neighbor_pointer].second)
     {
-      unvisited.insert(neighbor);
-    } 
-  }
-
-  return false;
-}
-
-std::vector<TileAndCoordinates> AIMaster::getReachableNeighborsOfTile(Tile* tile, size_t row, size_t column)
-{
-  std::vector<TileAndCoordinates> neighbors;
-
-  for (Direction direction : Tile::all_directions_)
-  {
-    if (!(tile->isWallInDirection(direction))){
-
-      int new_row = row + calculateRowChangeInDirection(direction);
-      int new_column = column + calculateColumnChangeInDirection(direction);
-
-      int board_size = static_cast<int>(BOARD_SIZE);
-      if (new_row >= 0 && new_row < board_size && new_column >= 0 && new_column < board_size)
-      {  
-        Tile* neighbor = game_.getBoard()[new_row][new_column];
-        if (!(neighbor->isWallInDirection(game_.getCommandMaster()->getOppositeDirection(direction))))
-        {
-          Coordinates cords{new_row, new_column};
-          TileAndCoordinates tile_info{game_.getBoard()[new_row][new_column], cords};
-
-          neighbors.push_back(tile_info);
-        }
-      }
+      discovered[neighbor_pointer].second = neighbor_walls;
+      unvisited.erase(neighbor_pointer);
+      unvisited.insert(std::pair<Tile*, CoordinatesAndWalls>{neighbor_pointer, CoordinatesAndWalls{neighbor_coordinates, neighbor_walls}});
     }
   }
 
+}
+
+std::vector<TileCoordinatesAndWalls> AIMaster::getReachableNeighborsOfTile(Tile* tile, CoordinatesAndWalls info)
+{
+  std::vector<TileCoordinatesAndWalls> neighbors;
+
+  for (Direction direction : Tile::all_directions_)
+  {
+    size_t base_wall_increase = 0;
+
+    if (tile->isWallInDirection(direction))
+    {
+      base_wall_increase++;
+    }
+
+    int new_row = info.first.first + calculateRowChangeInDirection(direction);
+    int new_column = info.first.second + calculateColumnChangeInDirection(direction);
+
+    int board_size = static_cast<int>(BOARD_SIZE);
+    if (new_row >= 0 && new_row < board_size && new_column >= 0 && new_column < board_size)
+    {
+      Tile *neighbor = game_.getBoard()[new_row][new_column];
+
+      Coordinates cords{new_row, new_column};
+
+      size_t special_wall_increase = 0;
+
+      if ((neighbor->isWallInDirection(game_.getCommandMaster()->getOppositeDirection(direction))))
+      {
+        special_wall_increase++;
+      }
+
+      TileCoordinatesAndWalls tile_info{game_.getBoard()[new_row][new_column], cords, info.second + base_wall_increase + special_wall_increase};
+
+      neighbors.push_back(tile_info);
+    }
+  }
   return neighbors;
 }
 
@@ -337,17 +354,17 @@ std::vector<TileAndCoordinates> AIMaster::getNeighborsOfTile(size_t row, size_t 
 
   for (Direction direction : Tile::all_directions_)
   {
-      int new_row = row + calculateRowChangeInDirection(direction);
-      int new_column = column + calculateColumnChangeInDirection(direction);
+    int new_row = row + calculateRowChangeInDirection(direction);
+    int new_column = column + calculateColumnChangeInDirection(direction);
 
-      int board_size = static_cast<int>(BOARD_SIZE);
-      if (new_row >= 0 && new_row < board_size && new_column >= 0 && new_column < board_size)
-      {  
-        Coordinates cords{new_row, new_column};
-        TileAndCoordinates tile_info{game_.getBoard()[new_row][new_column], cords};
+    int board_size = static_cast<int>(BOARD_SIZE);
+    if (new_row >= 0 && new_row < board_size && new_column >= 0 && new_column < board_size)
+    {
+      Coordinates cords{new_row, new_column};
+      TileAndCoordinates tile_info{game_.getBoard()[new_row][new_column], cords};
 
-        neighbors.push_back(tile_info);
-      }
+      neighbors.push_back(tile_info);
+    }
   }
   return neighbors;
 }
@@ -365,7 +382,7 @@ int AIMaster::calculateRowChangeInDirection(Direction direction)
       return 1;
     case Direction::RIGHT:
       return 0;
-    
+
     default:
       return 0;
   }
@@ -383,15 +400,15 @@ int AIMaster::calculateColumnChangeInDirection(Direction direction)
       return 0;
     case Direction::RIGHT:
       return 1;
-    
+
     default:
       return 0;
   }
 }
 
-void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates)
+void AIMaster::playerGo(std::vector<std::vector<std::string>> &commands, Coordinates desired_coordinates)
 {
-  Player* current_player = game_.getCurrentPlayer();
+  Player *current_player = game_.getCurrentPlayer();
   int to_row = desired_coordinates.first;
   int to_column = desired_coordinates.second;
   std::vector<std::string> command;
@@ -410,14 +427,12 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
         fake_insert_direction = command[1];
         fake_insert_index = command[2];
         faked_insert = true;
-      }
-      else
+      } else
       {
         if (command[1] == "left")
         {
           left_counter++;
-        }
-        else
+        } else
         {
           right_counter++;
         }
@@ -426,7 +441,7 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
   }
 
   int current_row = current_player->getRow();
-  int current_column = current_player->getCol();  
+  int current_column = current_player->getCol();
 
   if ((to_row == -1 && to_column == -1) || (current_row == to_row && current_column == to_column))
   {
@@ -444,17 +459,17 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
 
   do
   {
-    if (isConnected(current_player, current_tile.second.first + 1, current_tile.second.second + 1))
+    if (getWallsToTile(current_player, current_tile.second.first + 1, current_tile.second.second + 1) == 0)
     {
       command.push_back("go");
       command.push_back(std::to_string(current_tile.second.first + 1));
       command.push_back(std::to_string(current_tile.second.second + 1));
       commands.push_back(command);
       break;
-    }
-    else
+    } else
     {
-      std::vector<TileAndCoordinates> neighbors = getNeighborsOfTile(current_tile.second.first, current_tile.second.second);
+      std::vector<TileAndCoordinates> neighbors = getNeighborsOfTile(current_tile.second.first,
+                                                                     current_tile.second.second);
 
       for (TileAndCoordinates neighbor : neighbors)
       {
@@ -496,8 +511,7 @@ void AIMaster::undoFakeInsert(std::string direction, std::string index)
   if (direction == "left" || direction == "right")
   {
     fakeInsertRow(getOppositeDirection(direction), index);
-  }
-  else
+  } else
   {
     fakeInsertColumn(getOppositeDirection(direction), index);
   }
@@ -511,7 +525,7 @@ Coordinates AIMaster::getTreasureCoordinates(Treasure *treasure)
     {
       if (game_.getBoard()[row][column]->hasTreasure())
       {
-        TreasureTile* treasure_tile = dynamic_cast<TreasureTile*>(game_.getBoard()[row][column]);
+        TreasureTile *treasure_tile = dynamic_cast<TreasureTile *>(game_.getBoard()[row][column]);
         if (treasure_tile->getTreasure() == treasure)
         {
           return Coordinates{row, column};
@@ -524,20 +538,20 @@ Coordinates AIMaster::getTreasureCoordinates(Treasure *treasure)
 
 Coordinates AIMaster::getHomeBaseCoordinates()
 {
-  Player* current_player = game_.getCurrentPlayer();
+  Player *current_player = game_.getCurrentPlayer();
 
-  std::vector<std::vector<Tile*>> board = game_.getBoard();
-  std::vector<TileAndCoordinates> bases = 
-  {
-    TileAndCoordinates{board[0][0], Coordinates{0, 0}},
-    TileAndCoordinates{board[BOARD_SIZE - 1][0], Coordinates{6, 0}},
-    TileAndCoordinates{board[0][BOARD_SIZE - 1], Coordinates{0, BOARD_SIZE - 1}},
-    TileAndCoordinates{board[6][BOARD_SIZE - 1], Coordinates{6, BOARD_SIZE - 1}}
-  };
+  std::vector<std::vector<Tile *>> board = game_.getBoard();
+  std::vector<TileAndCoordinates> bases =
+    {
+      TileAndCoordinates{board[0][0], Coordinates{0, 0}},
+      TileAndCoordinates{board[BOARD_SIZE - 1][0], Coordinates{6, 0}},
+      TileAndCoordinates{board[0][BOARD_SIZE - 1], Coordinates{0, BOARD_SIZE - 1}},
+      TileAndCoordinates{board[6][BOARD_SIZE - 1], Coordinates{6, BOARD_SIZE - 1}}
+    };
 
   for (TileAndCoordinates base_info : bases)
   {
-    if (dynamic_cast<StartTile*>(base_info.first)->getPlayerColor() == current_player->getPlayerColor())
+    if (dynamic_cast<StartTile *>(base_info.first)->getPlayerColor() == current_player->getPlayerColor())
     {
       return base_info.second;
     }
@@ -548,33 +562,29 @@ Coordinates AIMaster::getHomeBaseCoordinates()
 
 Coordinates AIMaster::getDesiredCoordinates()
 {
-  std::vector<Treasure*> treasures = game_.getCurrentPlayer()->getCoveredStackRef();
+  std::vector<Treasure *> treasures = game_.getCurrentPlayer()->getCoveredStackRef();
   if (treasures.empty())
   {
     return getHomeBaseCoordinates();
-  }
-  else
+  } else
   {
-    Treasure* current_treasure = treasures.back();
+    Treasure *current_treasure = treasures.back();
     return getTreasureCoordinates(current_treasure);
   }
 }
 
 std::string AIMaster::getOppositeDirection(std::string direction)
 {
-  if(direction == "left")
+  if (direction == "left")
   {
     return "right";
-  }
-  else if(direction == "right")
+  } else if (direction == "right")
   {
     return "left";
-  }
-  else if(direction == "top")
+  } else if (direction == "top")
   {
     return "bottom";
-  }
-  else
+  } else
   {
     return "top";
   }

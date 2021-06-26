@@ -665,7 +665,7 @@ void CommandMaster::checkPathFinding(std::vector<std::string> tokens)
     {
       if (column > 0 && column <= BOARD_SIZE)
       {
-        if (game_.getAIMaster()->isConnected(game_.getCurrentPlayer(), row, column))
+        if (game_.getAIMaster()->getWallsToTile(game_.getCurrentPlayer(), row, column) == 0)
         {
           teleportPlayer(game_.getCurrentPlayer(), row, column);
         }

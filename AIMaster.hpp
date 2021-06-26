@@ -23,7 +23,10 @@ class Treasure;
 enum class Direction;
 
 typedef std::pair<int, int> Coordinates;
+typedef std::pair<Coordinates , size_t> CoordinatesAndWalls;
+typedef std::tuple<Tile*, Coordinates, size_t> TileCoordinatesAndWalls;
 typedef std::pair<Tile*, Coordinates> TileAndCoordinates;
+typedef std::map<Tile *, CoordinatesAndWalls> TileInfoMap;
 
 class AIMaster
 {
@@ -33,11 +36,10 @@ private:
   bool executeAllCommands(std::vector<std::vector<std::string>>& commands);
 
   //Pathfinding
-  bool addNeighbors(Tile* current_tile, size_t current_row, size_t current_column, Tile* to_tile,
-                    std::set<Tile*>& discovered, std::map<Tile*, Coordinates>& unvisited);
-  Tile* chooseNextTile(size_t to_row, size_t to_column, std::map<Tile*, Coordinates>&
-  unvisited, size_t& current_row, size_t& current_column);
-  std::vector<TileAndCoordinates> getReachableNeighborsOfTile(Tile* tile, size_t row, size_t column);
+  void addNeighbors(Tile* current_tile, TileInfoMap& discovered, TileInfoMap& unvisited);
+  Tile* chooseNextTile(size_t to_row, size_t to_column, std::map<Tile*, std::pair<Coordinates, size_t>>&
+  unvisited, size_t& current_row, size_t& current_column, size_t& shortest_path);
+  std::vector<TileCoordinatesAndWalls> getReachableNeighborsOfTile(Tile* tile, CoordinatesAndWalls info);
   int calculateRowChangeInDirection(Direction direction);
   int calculateColumnChangeInDirection(Direction direction);
 
@@ -70,7 +72,7 @@ public:
   AIMaster(const AIMaster& ai_master) = delete;
   AIMaster& operator=(const AIMaster& ai_master) = delete;
 
-  bool isConnected(Player* current_player, size_t to_row, size_t to_column);
+  size_t getWallsToTile(Player* current_player, size_t to_row, size_t to_column);
   bool playAI();
 };
 
