@@ -53,7 +53,7 @@ private:
 
   // insert
   void makeInsert(std::vector<std::vector<std::string>>& commands, Coordinates& desired_coordinates);
-  bool testInsert(std::string direction, std::string index, Coordinates& desired_coordinates);
+  size_t testInsert(std::string direction, std::string index, Coordinates& desired_coordinates);
   void fakeInsertRow(std::string direction, std::string index);
   void fakeInsertColumn(std::string direction, std::string index);
   std::string getOppositeDirection(std::string direction);

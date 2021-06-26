@@ -57,35 +57,55 @@ void AIMaster::makeInsert(std::vector<std::vector<std::string>> &commands, Coord
 {
   std::vector<std::string> directions = {"top", "left", "bottom", "right"};
   std::vector<std::string> indices = {"2", "4", "6"};
+  size_t min_walls = -1;
+
+  std::string best_direction;
+  std::string best_index;
+  size_t best_rotation;
 
   for (std::string direction : directions)
   {
     for (std::string index : indices)
     {
-      for (size_t rotation = 0; rotation < 4; rotation++)
+      if (checkLastInsert(direction, index))
       {
-        if (rotation != 0)
+        for (size_t rotation = 0; rotation < 4; rotation++)
         {
-          game_.getFreeTile()->rotate(Direction::LEFT);
-        }
-        if (testInsert(direction, index, desired_coordinates)
-            && checkLastInsert(direction, index))
-        {
-          addRotation(commands, rotation);
-          std::vector<std::string> insert = {"insert", direction, index};
-          commands.push_back(insert);
-          return;
-        }
-        undoFakeInsert(direction, index);
-        if (rotation == 3)
-        {
-          game_.getFreeTile()->rotate(Direction::LEFT);
+          if (rotation != 0)
+          {
+            game_.getFreeTile()->rotate(Direction::LEFT);
+          }
+          size_t wall_count = testInsert(direction, index, desired_coordinates);
+          if (wall_count < min_walls)
+          {
+            min_walls = wall_count;
+
+            best_direction = direction;
+            best_index = index;
+            best_rotation = rotation;
+          }
+          undoFakeInsert(direction, index);
+          if (rotation == 3)
+          {
+            game_.getFreeTile()->rotate(Direction::LEFT);
+          }
         }
       }
     }
   }
 
-  randomInsert(commands);
+
+  addRotation(commands, best_rotation);
+  std::vector<std::string> insert = {"insert", best_direction, best_index};
+  commands.push_back(insert);
+
+  while (best_rotation != 0)
+  {
+    game_.getFreeTile()->rotate(Direction::LEFT);
+    best_rotation--;
+  }
+  testInsert(best_direction, best_index, desired_coordinates);
+  std::cout << min_walls << std::endl;
 }
 
 void AIMaster::addRotation(std::vector<std::vector<std::string>> &commands, size_t rotation)
@@ -136,7 +156,7 @@ void AIMaster::randomInsert(std::vector<std::vector<std::string>> &commands)
   commands.push_back(insert);
 }
 
-bool AIMaster::testInsert(std::string direction, std::string index, Coordinates &desired_coordinates)
+size_t AIMaster::testInsert(std::string direction, std::string index, Coordinates &desired_coordinates)
 {
   if (direction == "left" || direction == "right")
   {
@@ -150,15 +170,10 @@ bool AIMaster::testInsert(std::string direction, std::string index, Coordinates 
 
   if (desired_coordinates.first == -1 && desired_coordinates.second == -1)
   {
-    return false;
+    return -1;
   }
 
-  if (getWallsToTile(game_.getCurrentPlayer(), desired_coordinates.first + 1, desired_coordinates.second + 1) == 0)
-  {
-    return true;
-  }
-
-  return false;
+  return getWallsToTile(game_.getCurrentPlayer(), desired_coordinates.first + 1, desired_coordinates.second + 1);
 }
 
 void AIMaster::fakeInsertRow(std::string direction, std::string index)
