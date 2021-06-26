@@ -46,6 +46,7 @@ private:
   Coordinates getDesiredCoordinates();
   Coordinates getHomeBaseCoordinates();
   Coordinates getTreasureCoordinates(Treasure* treasure);
+  std::vector<TileAndCoordinates> getNeighborsOfTile(size_t row, size_t column);
 
 
   // insert

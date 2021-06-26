@@ -1,8 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // AIMaster.cpp
 //
-// TODO
-//
 // Authors: Triochter Bande (Grill Matthias, Killer Lorenz, Nagy Lukas)
 //----------------------------------------------------------------------------------------------------------------------
 //
@@ -299,6 +297,27 @@ std::vector<TileAndCoordinates> AIMaster::getReachableNeighborsOfTile(Tile* tile
   return neighbors;
 }
 
+std::vector<TileAndCoordinates> AIMaster::getNeighborsOfTile(size_t row, size_t column)
+{
+  std::vector<TileAndCoordinates> neighbors;
+
+  for (Direction direction : Tile::all_directions_)
+  {
+      int new_row = row + calculateRowChangeInDirection(direction);
+      int new_column = column + calculateColumnChangeInDirection(direction);
+
+      int board_size = static_cast<int>(BOARD_SIZE);
+      if (new_row >= 0 && new_row < board_size && new_column >= 0 && new_column < board_size)
+      {  
+        Coordinates cords{new_row, new_column};
+        TileAndCoordinates tile_info{game_.getBoard()[new_row][new_column], cords};
+
+        neighbors.push_back(tile_info);
+      }
+  }
+  return neighbors;
+}
+
 
 int AIMaster::calculateRowChangeInDirection(Direction direction)
 {
@@ -365,17 +384,36 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
     return;
   }
 
-  if (isConnected(current_player, to_row + 1, to_column + 1))
+  TileAndCoordinates current_tile{game_.getBoard()[to_row][to_column], Coordinates{to_row, to_column}};
+  std::set<TileAndCoordinates> try_tiles;
+  std::set<TileAndCoordinates> known_tiles;
+
+  do
   {
-    command.push_back("go");
-    command.push_back(std::to_string(to_row + 1));
-    command.push_back(std::to_string(to_column + 1));
-    commands.push_back(command);
-  }
-  else
-  {
-    // TODO: Not connected - move as close as possible
-  }
+    if (isConnected(current_player, current_tile.second.first + 1, current_tile.second.second + 1))
+    {
+      command.push_back("go");
+      command.push_back(std::to_string(current_tile.second.first + 1));
+      command.push_back(std::to_string(current_tile.second.second + 1));
+      commands.push_back(command);
+      break;
+    }
+    else
+    {
+      std::vector<TileAndCoordinates> neighbors = getNeighborsOfTile(current_tile.second.first, current_tile.second.second);
+
+      for (TileAndCoordinates neighbor : neighbors)
+      {
+        if (known_tiles.insert(neighbor).second)
+        {
+          try_tiles.insert(neighbor);
+        }
+      }
+    }
+
+    current_tile = *(try_tiles.begin());
+    try_tiles.erase(try_tiles.begin());
+  } while (try_tiles.size() != 0);
 
   if (faked_insert)
   {
