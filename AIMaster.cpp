@@ -76,7 +76,7 @@ void AIMaster::makeInsert(std::vector<std::vector<std::string>> &commands, Coord
             game_.getFreeTile()->rotate(Direction::LEFT);
           }
           size_t wall_count = testInsert(direction, index, desired_coordinates);
-          if (wall_count < min_walls)
+          if (wall_count <= min_walls)
           {
             min_walls = wall_count;
 
