@@ -105,7 +105,6 @@ void AIMaster::makeInsert(std::vector<std::vector<std::string>> &commands, Coord
     best_rotation--;
   }
   testInsert(best_direction, best_index, desired_coordinates);
-  std::cout << min_walls << std::endl;
 }
 
 void AIMaster::addRotation(std::vector<std::vector<std::string>> &commands, size_t rotation)
@@ -469,7 +468,7 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>> &commands, Coordin
   }
 
   TileAndCoordinates current_tile{game_.getBoard()[to_row][to_column], Coordinates{to_row, to_column}};
-  std::set<TileAndCoordinates> try_tiles;
+  std::vector<TileAndCoordinates> try_tiles;
   std::set<TileAndCoordinates> known_tiles;
 
   do
@@ -481,7 +480,8 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>> &commands, Coordin
       command.push_back(std::to_string(current_tile.second.second + 1));
       commands.push_back(command);
       break;
-    } else
+    }
+    else
     {
       std::vector<TileAndCoordinates> neighbors = getNeighborsOfTile(current_tile.second.first,
                                                                      current_tile.second.second);
@@ -490,7 +490,7 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>> &commands, Coordin
       {
         if (known_tiles.insert(neighbor).second)
         {
-          try_tiles.insert(neighbor);
+          try_tiles.push_back(neighbor);
         }
       }
     }
