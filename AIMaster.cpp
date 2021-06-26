@@ -61,17 +61,51 @@ void AIMaster::makeInsert(std::vector<std::vector<std::string>>& commands, Coord
   {
     for (std::string index : indices)
     {
-      if (testInsert(direction, index, desired_coordinates) && checkLastInsert(direction, index))
+      for (size_t rotation = 0; rotation < 4; rotation++)
       {
-        std::vector<std::string> insert = {"insert", direction, index};         
-        commands.push_back(insert);
-        return;
+        if (rotation != 0)
+        {
+          game_.getFreeTile()->rotate(Direction::LEFT);
+        }
+        if (testInsert(direction, index, desired_coordinates)
+            && checkLastInsert(direction, index))
+        {
+          addRotation(commands, rotation);
+          std::vector<std::string> insert = {"insert", direction, index};
+          commands.push_back(insert);
+          return;
+        }
+        undoFakeInsert(direction, index);
+        if (rotation == 3)
+        {
+          game_.getFreeTile()->rotate(Direction::LEFT);
+        }
       }
-      undoFakeInsert(direction, index);
     }
   }
 
   randomInsert(commands);
+}
+
+void AIMaster::addRotation(std::vector<std::vector<std::string>> &commands, size_t rotation)
+{
+  std::vector<std::string> rotation_command_left = {"rotate", "left"};
+  std::vector<std::string> rotation_command_right = {"rotate", "right"};
+  switch (rotation)
+  {
+    case 1:
+      commands.push_back(rotation_command_left);
+      break;
+    case 2:
+      commands.push_back(rotation_command_left);
+      commands.push_back(rotation_command_left);
+      break;
+    case 3:
+      commands.push_back(rotation_command_right);
+      break;
+    default:
+      return;
+  }
 }
 
 void AIMaster::randomInsert(std::vector<std::vector<std::string>> &commands)
@@ -364,12 +398,31 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
   bool faked_insert = false;
   std::string fake_insert_direction;
   std::string fake_insert_index;
+  size_t left_counter = 0;
+  size_t right_counter = 0;
 
-  if (commands.size() == 1)
+  if (commands.size() > 0)
   {
-    fake_insert_direction = commands[0][1];
-    fake_insert_index = commands[0][2];
-    faked_insert = true;
+    for (auto command : commands)
+    {
+      if (command[0] == "insert")
+      {
+        fake_insert_direction = command[1];
+        fake_insert_index = command[2];
+        faked_insert = true;
+      }
+      else
+      {
+        if (command[1] == "left")
+        {
+          left_counter++;
+        }
+        else
+        {
+          right_counter++;
+        }
+      }
+    }
   }
 
   int current_row = current_player->getRow();
@@ -380,6 +433,7 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
     if (faked_insert)
     {
       undoFakeInsert(fake_insert_direction, fake_insert_index);
+      undoRotation(left_counter, right_counter);
     }
     return;
   }
@@ -418,6 +472,22 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>>& commands, Coordin
   if (faked_insert)
   {
     undoFakeInsert(fake_insert_direction, fake_insert_index);
+    undoRotation(left_counter, right_counter);
+  }
+}
+
+void AIMaster::undoRotation(size_t left_counter, size_t right_counter)
+{
+  while (left_counter != 0)
+  {
+    game_.getFreeTile()->rotate(Direction::RIGHT);
+    left_counter--;
+  }
+
+  while (right_counter != 0)
+  {
+    game_.getFreeTile()->rotate(Direction::LEFT);
+    right_counter--;
   }
 }
 

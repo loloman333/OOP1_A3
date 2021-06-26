@@ -59,6 +59,10 @@ private:
   bool checkLastInsert(std::string direction, std::string index);
   void randomInsert(std::vector<std::vector<std::string>>& commands);
 
+  // rotation
+  void addRotation(std::vector<std::vector<std::string>>& commands, size_t rotation);
+  void undoRotation(size_t left_counter, size_t right_counter);
+
 public:
   AIMaster(Game& game);
 
