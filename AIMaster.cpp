@@ -196,7 +196,6 @@ bool AIMaster::isConnected(Player* current_player, size_t to_row, size_t to_colu
   to_row -= 1;
   to_column -= 1;
 
-  std::cout << "isConencted:" << to_row << " " << to_column << std::endl;
   Tile* to_tile = game_.getBoard()[to_row][to_column];
   size_t current_row = current_player->getRow();
   size_t current_column = current_player->getCol();
