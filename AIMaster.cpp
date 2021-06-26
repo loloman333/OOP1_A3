@@ -128,33 +128,6 @@ void AIMaster::addRotation(std::vector<std::vector<std::string>> &commands, size
   }
 }
 
-void AIMaster::randomInsert(std::vector<std::vector<std::string>> &commands)
-{
-  std::vector<std::string> directions = {"top", "left", "bottom", "right"};
-  std::vector<std::string> indices = {"2", "4", "6",};
-
-  size_t random_direction_index;
-  size_t random_index_index;
-
-  do
-  {
-    random_direction_index = rand() % 4;
-    random_index_index = rand() % 3;
-  } while (!checkLastInsert(directions[random_direction_index], indices[random_index_index]));
-
-  std::vector<std::string> insert = {"insert", directions[random_direction_index], indices[random_index_index]};
-
-  if (directions[random_direction_index] == "left" || directions[random_direction_index] == "right")
-  {
-    fakeInsertRow(directions[random_direction_index], indices[random_index_index]);
-  } else
-  {
-    fakeInsertColumn(directions[random_direction_index], indices[random_index_index]);
-  }
-
-  commands.push_back(insert);
-}
-
 size_t AIMaster::testInsert(std::string direction, std::string index, Coordinates &desired_coordinates)
 {
   if (direction == "left" || direction == "right")
@@ -468,7 +441,7 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>> &commands, Coordin
   }
 
   TileAndCoordinates current_tile{game_.getBoard()[to_row][to_column], Coordinates{to_row, to_column}};
-  std::vector<TileAndCoordinates> try_tiles;
+  std::set<TileAndCoordinates> try_tiles;
   std::set<TileAndCoordinates> known_tiles;
 
   do
@@ -490,7 +463,7 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>> &commands, Coordin
       {
         if (known_tiles.insert(neighbor).second)
         {
-          try_tiles.push_back(neighbor);
+          try_tiles.insert(neighbor);
         }
       }
     }
