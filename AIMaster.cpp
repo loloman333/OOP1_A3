@@ -54,7 +54,7 @@ bool AIMaster::executeAllCommands(std::vector<std::vector<std::string>> &command
   return game_.getCommandMaster()->executeCommand(finish_command);
 }
 
-void AIMaster::makeInsert(std::vector<std::vector<std::string>>& commands, Coordinates desired_coordinates)
+void AIMaster::makeInsert(std::vector<std::vector<std::string>>& commands, Coordinates& desired_coordinates)
 {
   std::vector<std::string> directions = {"top", "left", "bottom", "right"};
   std::vector<std::string> indices = {"2", "4", "6"};
@@ -104,7 +104,7 @@ void AIMaster::randomInsert(std::vector<std::vector<std::string>> &commands)
   commands.push_back(insert);
 }
 
-bool AIMaster::testInsert(std::string direction, std::string index, Coordinates desired_coordinates)
+bool AIMaster::testInsert(std::string direction, std::string index, Coordinates& desired_coordinates)
 {
   if (direction == "left" || direction == "right")
   {
@@ -113,6 +113,13 @@ bool AIMaster::testInsert(std::string direction, std::string index, Coordinates 
   else
   {
     fakeInsertColumn(direction, index);
+  }
+
+  desired_coordinates = getDesiredCoordinates();
+
+  if (desired_coordinates.first == -1 && desired_coordinates.second == -1)
+  {
+    return false;
   }
 
   if (isConnected(game_.getCurrentPlayer(), desired_coordinates.first + 1, desired_coordinates.second + 1))
@@ -189,6 +196,7 @@ bool AIMaster::isConnected(Player* current_player, size_t to_row, size_t to_colu
   to_row -= 1;
   to_column -= 1;
 
+  std::cout << "isConencted:" << to_row << " " << to_column << std::endl;
   Tile* to_tile = game_.getBoard()[to_row][to_column];
   size_t current_row = current_player->getRow();
   size_t current_column = current_player->getCol();
