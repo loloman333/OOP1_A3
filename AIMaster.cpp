@@ -441,7 +441,7 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>> &commands, Coordin
   }
 
   TileAndCoordinates current_tile{game_.getBoard()[to_row][to_column], Coordinates{to_row, to_column}};
-  std::set<TileAndCoordinates> try_tiles;
+  std::vector<TileAndCoordinates> try_tiles;
   std::set<TileAndCoordinates> known_tiles;
 
   do
@@ -463,7 +463,7 @@ void AIMaster::playerGo(std::vector<std::vector<std::string>> &commands, Coordin
       {
         if (known_tiles.insert(neighbor).second)
         {
-          try_tiles.insert(neighbor);
+          try_tiles.push_back(neighbor);
         }
       }
     }
